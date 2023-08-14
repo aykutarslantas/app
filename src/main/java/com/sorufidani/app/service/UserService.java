@@ -25,8 +25,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @Service
 public class UserService {
 
-    private EmailSenderService senderService;
-    private UserDao userDao;
+    private final EmailSenderService senderService;
+    private final UserDao userDao;
 
     private static final String EMAIL_PATTERN = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private static final Pattern pattern = Pattern.compile(EMAIL_PATTERN);
