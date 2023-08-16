@@ -5,6 +5,7 @@ import com.sorufidani.app.model.Eser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,5 +35,9 @@ public class EserService {
             e.printStackTrace(); // Hata izini
             return new ArrayList<>(); // Hata durumunda boş liste döndür
         }
+    }
+
+    public Eser get(int id) throws SQLException {
+        return eserDao.get(id);
     }
 }

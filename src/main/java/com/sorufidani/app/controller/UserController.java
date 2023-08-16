@@ -55,14 +55,14 @@ public class UserController {
     }
 
     @GetMapping(value = "/user-detail", produces = "application/json")
-    public User getUser(@RequestHeader("Authorization") String authorizationHeader, @RequestHeader int id) throws SQLException {
-        int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader, id);
+    public User getUser(@RequestHeader("Authorization") String authorizationHeader) throws SQLException {
+        int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader);
         return userService.get(userId);
     }
 
     @PostMapping(value = "/user-update", produces = "application/json")
-    public String updateUser(@RequestHeader("Authorization") String authorizationHeader, @RequestHeader int id, @RequestBody User userRequest) {
-        int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader, id);
+    public String updateUser(@RequestHeader("Authorization") String authorizationHeader, @RequestBody User userRequest) {
+        int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader);
         return userService.updateUser(userRequest, userId);
     }
 

@@ -1,6 +1,5 @@
 package com.sorufidani.app.controller;
 
-import com.sorufidani.app.model.Eser;
 import com.sorufidani.app.model.User;
 import com.sorufidani.app.service.EserService;
 import com.sorufidani.app.service.JWTService;
@@ -10,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.List;
 import java.util.Objects;
 
 @RestController
@@ -30,9 +28,9 @@ public class EserController {
 
 
     @GetMapping(value = "/eserler", produces = "application/json")
-    public Object getEserler(@RequestHeader("Authorization") String authorizationHeader, @RequestHeader int id, @RequestParam int page) {
+    public Object getEserler(@RequestHeader("Authorization") String authorizationHeader, @RequestParam int page) {
         try {
-            int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader, id);
+            int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader);
             User user = userService.get(userId);
 
             int userAge = calculateUserAge(user.getBirthday());
@@ -44,9 +42,17 @@ public class EserController {
         }
     }
 
-    @GetMapping(value = "eser", produces = "application/json")
-    public String getEser() {
-        return "";
+    @GetMapping(value = "eser/{id}", produces = "application/json")
+    public Object getEser(@PathVariable("id") int eserId, @RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader);
+            User user = userService.get(userId);
+            return eserService.get(eserId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e;
+        }
     }
 
     @PostMapping(value = "/eser-update", produces = "application/json")

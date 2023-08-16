@@ -119,4 +119,26 @@ public class TokenDaoImpl implements TokenDao {
         }
 
     }
+
+    @Override
+    public int getUserLoginId(int id) {
+
+        String query = "SELECT id FROM tokens t WHERE id = ? AND is_active = 1";
+        try (
+                Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ) {
+            preparedStatement.setInt(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("id");
+                } else {
+                    return 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

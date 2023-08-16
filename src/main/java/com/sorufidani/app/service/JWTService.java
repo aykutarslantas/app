@@ -4,6 +4,7 @@ import com.sorufidani.app.config.GenerateSHA256InSpringBoot;
 import com.sorufidani.app.dao.TokenDao;
 import com.sorufidani.app.dao.TokenDaoImpl;
 import com.sorufidani.app.dao.UserDaoImpl;
+import com.sorufidani.app.exception.TokenValidationException;
 import com.sorufidani.app.model.LoginRequest;
 import com.sorufidani.app.model.Token;
 import com.sorufidani.app.model.User;
@@ -25,7 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class JWTService {
 
-    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    //private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final String SECRET_KEY = "Jm2xjWAbJtOvBZySMJq5goSnaT7C9tR0/koyTLLsiRo=";
     private static final long EXPIRATION_TIME = 86400000; // 1 day in milliseconds
     private static final String[] ALLOWED_TYPE = {"app", "web"};
     private final UserService userService;
@@ -44,7 +46,6 @@ public class JWTService {
     public String generateJwtToken(String mail, String password, String type, HttpServletRequest request) {
 
         try {
-            LoginRequest loginRequest = new LoginRequest(mail, password, type);
             String headers = getHeaderInfo(request);
             if (!isValidLoginType(type)) {
                 return generateErrorResponse("Invalid login type");
@@ -63,32 +64,29 @@ public class JWTService {
         }
     }
 
-    public int decodeJwtAndGetUserId(String authorizationHeader, int id) {
-        int userId = 0;
-
-        if (!isValidAuthorizationHeader(authorizationHeader) || id < 1) {
-                return Integer.parseInt(messageSource.getMessage(ErrorMessages.INVALID_AUTH_HEADER, null, Locale.getDefault()));
-        }
-
-        String token = extractTokenFromHeader(authorizationHeader);
-        String secretKey = userService.getSecretKey(id);
-
-        if (secretKey == null || secretKey.isEmpty()) {
-            throw new RuntimeException("Secret key not found for user");
-        }
-
+    public int decodeJwtAndGetUserId(String authorizationHeader) {
         try {
-            try {
-                Claims claims = parseToken(token, secretKey);
-                userId = Integer.parseInt(claims.getSubject());
-            } catch (Exception e) {
-                throw new RuntimeException("Token validation failed");
+            if (!isValidAuthorizationHeader(authorizationHeader)) {
+                return Integer.parseInt(messageSource.getMessage(ErrorMessages.INVALID_AUTH_HEADER, null, Locale.getDefault()));
             }
-        } catch (Exception e) {
+
+            String token = extractTokenFromHeader(authorizationHeader);
+            Claims claims = parseToken(token);
+            int userId = Integer.parseInt(claims.getSubject());
+            int lastLoginId = Integer.parseInt(claims.getAudience());
+
+            TokenDao tokenDao = new TokenDaoImpl();
+            if (tokenDao.getUserLoginId(lastLoginId) == 0) {
+                return 0;
+            }
+
+            return userId;
+
+        } catch (TokenValidationException e) {
             return Integer.parseInt(messageSource.getMessage(ErrorMessages.TOKEN_VALIDATION_FAILED, null, Locale.getDefault()));
         }
-        return userId;
     }
+
 
     private String getHeaderInfo(HttpServletRequest request) {
         Enumeration<String> headerNames = request.getHeaderNames();
@@ -118,24 +116,23 @@ public class JWTService {
 
         Map<String, Object> jsonResponse = new HashMap<>();
         jsonResponse.put("errorCode", 0);
-        jsonResponse.put("id", generatedTokenId);
-        jsonResponse.put("token", generateAuthToken(user.getId(), type));
+        jsonResponse.put("token", generateAuthToken(user.getId(), generatedTokenId));
 
         return generateJsonResponse(jsonResponse);
     }
 
     private Token createToken(int userId, String headers, String type) {
-        String secretKeyBase64 = Base64.getEncoder().encodeToString(SECRET_KEY.getEncoded());
-        return new Token(secretKeyBase64, userId, type, headers);
+        return new Token(SECRET_KEY, userId, type, headers);
     }
 
-    private String generateAuthToken(int userId, String type) {
+
+    private String generateAuthToken(int userId, int loginId) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
-                .setAudience(type)
+                .setAudience(String.valueOf(loginId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -164,11 +161,12 @@ public class JWTService {
         return authorizationHeader.substring(7);
     }
 
-    private Claims parseToken(String token, String secretKey) {
+    private Claims parseToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+                .setSigningKey(SECRET_KEY.getBytes())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
+
 }

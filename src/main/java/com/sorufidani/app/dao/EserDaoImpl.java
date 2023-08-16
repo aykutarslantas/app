@@ -16,7 +16,29 @@ import java.util.List;
 public class EserDaoImpl implements EserDao {
     @Override
     public Eser get(int id) throws SQLException {
-        return null;
+        Eser eser = new Eser(id,"","","");
+
+        String query = "SELECT * FROM eserler WHERE id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    eser.setName(resultSet.getString("name"));
+                    eser.setCover(resultSet.getString("cover"));
+                    eser.setCreated_at(resultSet.getString("name"));
+                    eser.setPublisher_id(resultSet.getInt("publisher_id"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Hata izini
+            throw new RuntimeException(e);
+        }
+
+        return eser;
     }
 
     @Override

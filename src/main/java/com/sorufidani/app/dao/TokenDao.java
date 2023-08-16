@@ -6,4 +6,6 @@ public interface TokenDao extends DAO<Token> {
     int getUserTokenWithMail(String mail, String login_type);
 
     void updateTokenStatus(int lastLoginId);
+
+    int getUserLoginId(int id);
 }
