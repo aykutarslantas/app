@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.Objects;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 @RequestMapping("/api")
 public class EserController {
@@ -44,6 +46,7 @@ public class EserController {
 
     @GetMapping(value = "eser/{id}", produces = "application/json")
     public Object getEser(@PathVariable("id") int eserId, @RequestHeader("Authorization") String authorizationHeader) {
+        //todo: burda yoksa
         try {
             int userId = jwtService.decodeJwtAndGetUserId(authorizationHeader);
             User user = userService.get(userId);
@@ -51,7 +54,7 @@ public class EserController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return e;
+            return null;
         }
     }
 
