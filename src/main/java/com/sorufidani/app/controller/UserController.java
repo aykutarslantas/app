@@ -37,10 +37,20 @@ public class UserController {
         return userService.createUser(createUserRequest);
     }
 
-    @GetMapping(value = "/token", produces = "application/json")
-    public String generateJwtToken(@RequestParam String mail, @RequestParam String password, @RequestParam String type, HttpServletRequest request) throws SQLException, NoSuchAlgorithmException {
-        return jwtService.generateJwtToken(mail, password, type, request);
+    @GetMapping(value = "/login", produces = "application/json")
+    public ResponseEntity<String> generateJwtToken(@RequestParam String mail, @RequestParam String password, @RequestParam String type, HttpServletRequest request) throws SQLException, NoSuchAlgorithmException {
+        try {
+            if (mail == null || password == null || type == null) {
+                return ResponseEntity.badRequest().body("Eksik veya hatalı parametreler. Lütfen tüm alanları doldurun.");
+            }
+            String jwtToken = jwtService.generateJwtToken(mail, password, type, request);
+            return ResponseEntity.ok(jwtToken);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Sunucu hatası: " + e.getMessage());
+        }
 
+        //return jwtService.generateJwtToken(mail, password, type, request);
     }
 
     @PostMapping(value = "/forgot-password", produces = "application/json")

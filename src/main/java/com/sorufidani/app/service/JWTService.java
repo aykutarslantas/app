@@ -116,6 +116,7 @@ public class JWTService {
         int generatedTokenId = tokenDao.insert(token);
 
         Map<String, Object> jsonResponse = new HashMap<>();
+        jsonResponse.put("username", user.getName() + " " + user.getSurname());
         jsonResponse.put("errorCode", 0);
         jsonResponse.put("token", generateAuthToken(user.getId(), generatedTokenId));
 
